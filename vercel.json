@@ -1,7 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/divine", "destination": "/api/divine" },
-    { "source": "/api/interpret", "destination": "/api/interpret" },
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "outputDirectory": "public"
