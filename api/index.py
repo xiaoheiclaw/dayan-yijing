@@ -177,7 +177,11 @@ async def api_interpret(req: InterpretRequest):
             media_type="text/event-stream",
         )
 
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    base_url = os.environ.get("ANTHROPIC_BASE_URL")
+    client = anthropic.AsyncAnthropic(
+        api_key=api_key,
+        **({"base_url": base_url} if base_url else {}),
+    )
     user_prompt = _build_user_prompt(req.question, req.result)
 
     async def event_stream():
