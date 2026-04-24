@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/divine", "destination": "/api/divine" },
+    { "source": "/api/interpret", "destination": "/api/interpret" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "outputDirectory": "public"
+}

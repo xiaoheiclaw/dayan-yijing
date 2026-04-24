@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大衍筮法</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f0e8;
+  --bg-dark: #ebe4d8;
+  --ink: #2c2c2c;
+  --ink-light: #6b6356;
+  --red: #b5403a;
+  --red-light: #d4726c;
+  --gold: #8b7355;
+  --line-yang: #2c2c2c;
+  --line-yin: #2c2c2c;
+}
+
+body {
+  font-family: "Noto Serif SC", "STSong", "SimSun", serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.8;
+}
+
+.container {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gold);
+}
+
+.header h1 {
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  margin-bottom: 0.3rem;
+}
+
+.header .subtitle {
+  font-size: 0.85rem;
+  color: var(--ink-light);
+  letter-spacing: 0.15em;
+}
+
+/* Question Input */
+.question-section {
+  margin-bottom: 2rem;
+}
+
+.question-section textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 1rem;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.4);
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.question-section textarea::placeholder {
+  color: var(--ink-light);
+  opacity: 0.6;
+}
+
+.question-section textarea:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgba(181,64,58,0.1);
+}
+
+.btn-divine {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: inherit;
+  font-size: 1.1rem;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-divine:hover { background: var(--red); }
+.btn-divine:disabled {
+  background: var(--ink-light);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-divine.casting {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Result Area */
+.result-section {
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+
+.result-section.visible { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hexagram Display */
+.hexagram-card {
+  background: rgba(255,255,255,0.35);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.trigram-info {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-light);
+}
+
+.trigram-info .symbol {
+  font-size: 1.3rem;
+  margin-right: 0.3rem;
+}
+
+.hexagram-name {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.hexagram-name .seq {
+  font-size: 0.8rem;
+  color: var(--ink-light);
+}
+
+.hexagram-name .name {
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-weight: 700;
+  margin: 0.2rem 0;
+}
+
+.hexagram-name .ci {
+  font-size: 0.95rem;
+  color: var(--ink-light);
+  line-height: 1.6;
+}
+
+/* Yao Lines */
+.yao-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 1.2rem 0;
+}
+
+.yao-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.4s ease;
+}
+
+.yao-row.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.yao-pos {
+  width: 1.8rem;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--ink-light);
+}
+
+.yao-line {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.yao-line .bar {
+  width: 80px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--line-yang);
+  transition: background 0.3s;
+}
+
+.yao-row.changing .bar {
+  background: var(--red);
+}
+
+.yao-line .gap {
+  width: 14px;
+}
+
+.yao-marker {
+  width: 2rem;
+  font-size: 0.75rem;
+  color: var(--red);
+}
+
+/* Changing Yao Section */
+.changing-section {
+  border-top: 1px solid var(--gold);
+  padding-top: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.changing-section h3 {
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  margin-bottom: 0.8rem;
+}
+
+.yao-ci-item {
+  margin-bottom: 0.8rem;
+}
+
+.yao-ci-item .label {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.yao-ci-item .text {
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-left: 0.3rem;
+}
+
+/* Zhi Gua */
+.zhi-gua {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--gold);
+}
+
+.zhi-gua .label {
+  font-size: 0.85rem;
+  color: var(--ink-light);
+}
+
+.zhi-gua .name {
+  font-weight: 700;
+}
+
+/* Interpretation */
+.interpret-section {
+  background: rgba(255,255,255,0.35);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.interpret-section h3 {
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.interpret-section .thinking {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.interpret-text {
+  font-size: 0.95rem;
+  line-height: 2;
+  white-space: pre-wrap;
+}
+
+/* No changing */
+.no-changing {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--gold);
+  margin-top: 0.5rem;
+}
+
+/* Again button */
+.btn-again {
+  display: none;
+  width: 100%;
+  margin-top: 2rem;
+  padding: 0.8rem;
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-again:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.btn-again.visible { display: block; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gold);
+  font-size: 0.75rem;
+  color: var(--ink-light);
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>大衍筮法</h1>
+    <div class="subtitle">大衍之数五十 其用四十有九</div>
+  </div>
+
+  <div class="question-section">
+    <textarea id="question" placeholder="心中默念所问之事，写于此处..."></textarea>
+    <button class="btn-divine" id="btnDivine" onclick="startDivine()">起 卦</button>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <div class="hexagram-card" id="hexagramCard">
+      <div class="trigram-info">
+        <span id="upperTrigram"></span>
+        <span id="lowerTrigram"></span>
+      </div>
+      <div class="hexagram-name">
+        <div class="seq" id="hexSeq"></div>
+        <div class="name" id="hexName"></div>
+        <div class="ci" id="hexCi"></div>
+      </div>
+      <div class="yao-lines" id="yaoLines"></div>
+      <div id="changingArea"></div>
+    </div>
+
+    <div class="interpret-section" id="interpretSection" style="display:none">
+      <h3><span class="thinking" id="thinkingDot"></span> <span id="interpretLabel">解卦中</span></h3>
+      <div class="interpret-text" id="interpretText"></div>
+    </div>
+
+    <button class="btn-again" id="btnAgain" onclick="resetUI()">再 起 一 卦</button>
+  </div>
+
+  <div class="footer">揲蓍求卦 · 以明天道</div>
+</div>
+
+<script>
+const YAO_NAMES = ["初", "二", "三", "四", "五", "上"];
+
+function isYang(v) { return v === 7 || v === 9; }
+function isChanging(v) { return v === 6 || v === 9; }
+
+function renderYaoLine(yaoValue, index, changing) {
+  const row = document.createElement("div");
+  row.className = "yao-row" + (changing ? " changing" : "");
+  row.style.transitionDelay = (5 - index) * 0.2 + "s";
+
+  const pos = document.createElement("span");
+  pos.className = "yao-pos";
+  pos.textContent = YAO_NAMES[index];
+
+  const line = document.createElement("div");
+  line.className = "yao-line";
+
+  if (isYang(yaoValue)) {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.width = "174px";
+    line.appendChild(bar);
+  } else {
+    const b1 = document.createElement("div");
+    b1.className = "bar";
+    const gap = document.createElement("div");
+    gap.className = "gap";
+    const b2 = document.createElement("div");
+    b2.className = "bar";
+    line.appendChild(b1);
+    line.appendChild(gap);
+    line.appendChild(b2);
+  }
+
+  const marker = document.createElement("span");
+  marker.className = "yao-marker";
+  if (yaoValue === 9) marker.textContent = "○ 变";
+  else if (yaoValue === 6) marker.textContent = "✕ 变";
+
+  row.appendChild(pos);
+  row.appendChild(line);
+  row.appendChild(marker);
+  return row;
+}
+
+function renderChanging(result) {
+  const area = document.getElementById("changingArea");
+  area.innerHTML = "";
+
+  const changingCi = result.changing_yao_ci || [];
+  const zhiGua = result.zhi_gua;
+
+  if (changingCi.length === 0) {
+    const noChange = document.createElement("div");
+    noChange.className = "no-changing";
+    noChange.textContent = "六爻皆静 · 以卦辞为主断";
+    area.appendChild(noChange);
+    return;
+  }
+
+  const section = document.createElement("div");
+  section.className = "changing-section";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = "变爻爻辞";
+  section.appendChild(h3);
+
+  changingCi.forEach(ci => {
+    const item = document.createElement("div");
+    item.className = "yao-ci-item";
+    item.innerHTML = '<span class="label">' + ci.label + '：</span><span class="text">' + ci.text + '</span>';
+    section.appendChild(item);
+  });
+
+  if (zhiGua) {
+    const zhi = document.createElement("div");
+    zhi.className = "zhi-gua";
+    zhi.innerHTML = '<span class="label">之卦：</span><span class="name">第' + zhiGua.seq + '卦 【' + zhiGua.name + '】</span><br><span class="label">' + zhiGua.ci + '</span>';
+    section.appendChild(zhi);
+  }
+
+  area.appendChild(section);
+}
+
+async function startDivine() {
+  const btn = document.getElementById("btnDivine");
+  const question = document.getElementById("question").value.trim();
+
+  btn.disabled = true;
+  btn.textContent = "蓍草分拨中...";
+  btn.classList.add("casting");
+
+  document.getElementById("resultSection").classList.remove("visible");
+  document.getElementById("interpretSection").style.display = "none";
+  document.getElementById("interpretText").textContent = "";
+  document.getElementById("btnAgain").classList.remove("visible");
+
+  try {
+    const res = await fetch("/api/divine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    const result = await res.json();
+
+    btn.textContent = "起 卦";
+    btn.classList.remove("casting");
+    btn.disabled = false;
+
+    showResult(result);
+
+    if (question) {
+      setTimeout(() => startInterpret(question, result), 1500);
+    }
+  } catch (err) {
+    btn.textContent = "起 卦";
+    btn.classList.remove("casting");
+    btn.disabled = false;
+    alert("起卦失败：" + err.message);
+  }
+}
+
+function showResult(result) {
+  const h = result.hexagram;
+
+  document.getElementById("upperTrigram").innerHTML =
+    '<span class="symbol">' + h.upper_symbol + '</span>' + h.upper + '(' + h.upper_nature + ') 上卦';
+  document.getElementById("lowerTrigram").innerHTML =
+    '<span class="symbol">' + h.lower_symbol + '</span>' + h.lower + '(' + h.lower_nature + ') 下卦';
+
+  document.getElementById("hexSeq").textContent = "第" + h.seq + "卦";
+  document.getElementById("hexName").textContent = h.name;
+  document.getElementById("hexCi").textContent = h.ci;
+
+  const linesContainer = document.getElementById("yaoLines");
+  linesContainer.innerHTML = "";
+
+  const yaos = result.yaos;
+  const changingSet = new Set(result.changing);
+
+  for (let i = 5; i >= 0; i--) {
+    const row = renderYaoLine(yaos[i], i, changingSet.has(i));
+    linesContainer.appendChild(row);
+  }
+
+  document.getElementById("resultSection").classList.add("visible");
+
+  setTimeout(() => {
+    linesContainer.querySelectorAll(".yao-row").forEach(r => r.classList.add("visible"));
+  }, 100);
+
+  setTimeout(() => renderChanging(result), 1600);
+
+  setTimeout(() => {
+    document.getElementById("btnAgain").classList.add("visible");
+  }, 2000);
+}
+
+async function startInterpret(question, result) {
+  const section = document.getElementById("interpretSection");
+  const textEl = document.getElementById("interpretText");
+  const label = document.getElementById("interpretLabel");
+  const dot = document.getElementById("thinkingDot");
+
+  section.style.display = "block";
+  textEl.textContent = "";
+  label.textContent = "解卦中";
+  dot.style.display = "inline-block";
+
+  try {
+    const res = await fetch("/api/interpret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, result }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (line.startsWith("event: done")) {
+          dot.style.display = "none";
+          label.textContent = "解卦";
+          return;
+        }
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6);
+          if (data === "[DONE]") {
+            dot.style.display = "none";
+            label.textContent = "解卦";
+            return;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.text) {
+              textEl.textContent += parsed.text;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    dot.style.display = "none";
+    label.textContent = "解卦";
+  } catch (err) {
+    dot.style.display = "none";
+    label.textContent = "解卦";
+    textEl.textContent = "解读服务暂不可用。";
+  }
+}
+
+function resetUI() {
+  document.getElementById("resultSection").classList.remove("visible");
+  document.getElementById("interpretSection").style.display = "none";
+  document.getElementById("interpretText").textContent = "";
+  document.getElementById("btnAgain").classList.remove("visible");
+  document.getElementById("question").value = "";
+  document.getElementById("question").focus();
+}
+</script>
+</body>
+</html>
