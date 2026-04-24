@@ -4,9 +4,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 import anthropic
@@ -82,6 +84,17 @@ def _build_user_prompt(question: str, result: dict) -> str:
     lines.append("")
     lines.append("请为问卦者解读此卦。")
     return "\n".join(lines)
+
+
+PROJECT_ROOT = Path(__file__).parent.parent
+INDEX_HTML = PROJECT_ROOT / "public" / "index.html"
+
+
+@app.get("/")
+async def root():
+    if INDEX_HTML.exists():
+        return FileResponse(INDEX_HTML, media_type="text/html")
+    return HTMLResponse("<h1>大衍筮法</h1>")
 
 
 class DivineRequest(BaseModel):
