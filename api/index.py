@@ -170,21 +170,29 @@ async def api_divine(req: DivineRequest):
 
 @app.post("/api/interpret")
 async def api_interpret(req: InterpretRequest):
-    client = anthropic.AsyncAnthropic(
-        api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
-    )
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return StreamingResponse(
+            iter([f"data: {json.dumps({'text': '解读服务未配置 API Key'}, ensure_ascii=False)}\n\nevent: done\ndata: [DONE]\n\n"]),
+            media_type="text/event-stream",
+        )
+
+    client = anthropic.AsyncAnthropic(api_key=api_key)
     user_prompt = _build_user_prompt(req.question, req.result)
 
     async def event_stream():
-        async with client.messages.stream(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            temperature=0.7,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
-        ) as stream:
-            async for text in stream.text_stream:
-                yield f"data: {json.dumps({'text': text}, ensure_ascii=False)}\n\n"
+        try:
+            async with client.messages.stream(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                temperature=0.7,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_prompt}],
+            ) as stream:
+                async for text in stream.text_stream:
+                    yield f"data: {json.dumps({'text': text}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'text': f'解读出错：{e}'}, ensure_ascii=False)}\n\n"
         yield "event: done\ndata: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
