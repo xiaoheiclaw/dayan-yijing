@@ -86,15 +86,35 @@ def _build_user_prompt(question: str, result: dict) -> str:
     return "\n".join(lines)
 
 
-PROJECT_ROOT = Path(__file__).parent.parent
-INDEX_HTML = PROJECT_ROOT / "public" / "index.html"
+_HERE = Path(__file__).parent
+_SEARCH_PATHS = [
+    _HERE.parent / "public" / "index.html",
+    _HERE.parent / "web" / "static" / "index.html",
+    _HERE / ".." / "public" / "index.html",
+    Path("/var/task/public/index.html"),
+    Path("/var/task/web/static/index.html"),
+]
+
+_cached_html: str | None = None
+
+
+def _load_html() -> str:
+    global _cached_html
+    if _cached_html is not None:
+        return _cached_html
+    for p in _SEARCH_PATHS:
+        try:
+            if p.resolve().exists():
+                _cached_html = p.read_text(encoding="utf-8")
+                return _cached_html
+        except Exception:
+            continue
+    return "<h1>大衍筮法</h1><p>index.html not found</p>"
 
 
 @app.get("/")
 async def root():
-    if INDEX_HTML.exists():
-        return FileResponse(INDEX_HTML, media_type="text/html")
-    return HTMLResponse("<h1>大衍筮法</h1>")
+    return HTMLResponse(_load_html())
 
 
 class DivineRequest(BaseModel):
