@@ -86,7 +86,7 @@ async def api_interpret(req: InterpretRequest):
     async def event_stream():
         async with client.messages.stream(
             model="claude-sonnet-4-6",
-            max_tokens=1024,
+            max_tokens=2048,
             temperature=0.7,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
