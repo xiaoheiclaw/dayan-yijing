@@ -324,7 +324,7 @@ body {
   font-weight: 600;
 }
 .interpret-text strong { font-weight: 600; }
-.interpret-text ul { margin: 0.4em 0 0.8em; padding-left: 1.3em; }
+.interpret-text ul, .interpret-text ol { margin: 0.4em 0 0.8em; padding-left: 1.5em; }
 .interpret-text li { margin: 0.2em 0; }
 .interpret-text hr { border: none; border-top: 1px solid rgba(0,0,0,0.12); margin: 1em 0; }
 
@@ -575,15 +575,17 @@ function renderMarkdown(src) {
   const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const inline = s => esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   const out = [];
-  let para = [], list = [];
+  let para = [], list = [], listTag = "ul";
   const flushPara = () => { if (para.length) { out.push("<p>" + para.join("<br>") + "</p>"); para = []; } };
-  const flushList = () => { if (list.length) { out.push("<ul>" + list.map(li => "<li>" + li + "</li>").join("") + "</ul>"); list = []; } };
+  const flushList = () => { if (list.length) { out.push("<" + listTag + ">" + list.map(li => "<li>" + li + "</li>").join("") + "</" + listTag + ">"); list = []; } };
   for (const line of src.split("\n")) {
     const t = line.trim();
+    let m;
     if (t === "") { flushPara(); flushList(); continue; }
     if (/^#{1,6}\s+/.test(t)) { flushPara(); flushList(); out.push("<h4>" + inline(t.replace(/^#{1,6}\s+/, "")) + "</h4>"); continue; }
     if (/^([-*_])\1{2,}$/.test(t)) { flushPara(); flushList(); out.push("<hr>"); continue; }
-    if (/^[-*]\s+/.test(t)) { flushPara(); list.push(inline(t.replace(/^[-*]\s+/, ""))); continue; }
+    if (m = t.match(/^\d+[.)]\s+(.*)$/)) { flushPara(); if (listTag !== "ol") flushList(); listTag = "ol"; list.push(inline(m[1])); continue; }
+    if (/^[-*]\s+/.test(t)) { flushPara(); if (listTag !== "ul") flushList(); listTag = "ul"; list.push(inline(t.replace(/^[-*]\s+/, ""))); continue; }
     flushList(); para.push(inline(t));
   }
   flushPara(); flushList();
