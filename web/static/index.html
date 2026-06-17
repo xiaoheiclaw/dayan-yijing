@@ -314,8 +314,19 @@ body {
 .interpret-text {
   font-size: 0.95rem;
   line-height: 2;
-  white-space: pre-wrap;
 }
+.interpret-text p { margin: 0 0 0.8em; }
+.interpret-text p:last-child { margin-bottom: 0; }
+.interpret-text h4 {
+  font-size: 1.02rem;
+  margin: 1.1em 0 0.4em;
+  color: var(--red);
+  font-weight: 600;
+}
+.interpret-text strong { font-weight: 600; }
+.interpret-text ul { margin: 0.4em 0 0.8em; padding-left: 1.3em; }
+.interpret-text li { margin: 0.2em 0; }
+.interpret-text hr { border: none; border-top: 1px solid rgba(0,0,0,0.12); margin: 1em 0; }
 
 /* No changing */
 .no-changing {
@@ -560,6 +571,25 @@ function showResult(result) {
   }, 2000);
 }
 
+function renderMarkdown(src) {
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = s => esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  const out = [];
+  let para = [], list = [];
+  const flushPara = () => { if (para.length) { out.push("<p>" + para.join("<br>") + "</p>"); para = []; } };
+  const flushList = () => { if (list.length) { out.push("<ul>" + list.map(li => "<li>" + li + "</li>").join("") + "</ul>"); list = []; } };
+  for (const line of src.split("\n")) {
+    const t = line.trim();
+    if (t === "") { flushPara(); flushList(); continue; }
+    if (/^#{1,6}\s+/.test(t)) { flushPara(); flushList(); out.push("<h4>" + inline(t.replace(/^#{1,6}\s+/, "")) + "</h4>"); continue; }
+    if (/^([-*_])\1{2,}$/.test(t)) { flushPara(); flushList(); out.push("<hr>"); continue; }
+    if (/^[-*]\s+/.test(t)) { flushPara(); list.push(inline(t.replace(/^[-*]\s+/, ""))); continue; }
+    flushList(); para.push(inline(t));
+  }
+  flushPara(); flushList();
+  return out.join("");
+}
+
 async function startInterpret(question, result) {
   const section = document.getElementById("interpretSection");
   const textEl = document.getElementById("interpretText");
@@ -581,6 +611,7 @@ async function startInterpret(question, result) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    let raw = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -606,7 +637,8 @@ async function startInterpret(question, result) {
           try {
             const parsed = JSON.parse(data);
             if (parsed.text) {
-              textEl.textContent += parsed.text;
+              raw += parsed.text;
+              textEl.innerHTML = renderMarkdown(raw);
             }
           } catch (e) {}
         }
